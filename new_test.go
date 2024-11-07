@@ -136,6 +136,7 @@ func buildTestSegmentWithDefaultFieldMapping(chunkFactor uint32) (
 		NewFakeField("name", "wow", false, false, true),
 		NewFakeField("desc", "some thing", false, false, true),
 		NewFakeField("tag", "cold", false, false, true),
+		NewFakeField("number", string([]byte{0xff})+" "+string([]byte{'\\'}), false, false, true),
 	}
 	doc.FakeComposite("_all", []string{"_id"})
 

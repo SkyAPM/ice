@@ -15,7 +15,6 @@
 package ice
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -40,6 +39,7 @@ type docValueReader struct {
 	curChunkHeader []metaData
 	curChunkData   []byte // compressed data cache
 	uncompressed   []byte // temp buf for decompression
+	termBuf        []byte // temp buf for term decoding
 }
 
 func (di *docValueReader) size() int {
@@ -254,14 +254,14 @@ func (di *docValueReader) visitDocValues(docNum uint64,
 
 	// pick the terms for the given docNum
 	uncompressed = uncompressed[start:end]
-	for {
-		i := bytes.Index(uncompressed, termSeparatorSplitSlice)
-		if i < 0 {
-			break
+	startPos := 0
+	di.termBuf = di.termBuf[:0]
+	for len(uncompressed) > 0 {
+		if di.termBuf, uncompressed, err = decodeTerm(di.termBuf, uncompressed); err != nil {
+			return err
 		}
-
-		visitor(di.field, uncompressed[0:i])
-		uncompressed = uncompressed[i+1:]
+		visitor(di.field, di.termBuf[startPos:])
+		startPos = len(di.termBuf)
 	}
 
 	return nil

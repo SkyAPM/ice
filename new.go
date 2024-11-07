@@ -841,9 +841,7 @@ func (s *interim) writeDictsTermField(docTermMap [][]byte, dict map[string]uint6
 
 		freqNormOffset++
 
-		docTermMap[docNum] = append(
-			append(docTermMap[docNum], term...),
-			termSeparator)
+		docTermMap[docNum] = encodeTerm(docTermMap[docNum], []byte(term))
 	}
 
 	tfEncoder.Close()

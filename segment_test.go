@@ -387,23 +387,24 @@ func TestSegmentVisitableDocValueFieldsList(t *testing.T) {
 		}
 	}()
 
-	fields := []string{"desc", "name", "tag"}
-	fieldTerms := make(map[string][]string)
+	fields := []string{"desc", "name", "tag", "number"}
+	fieldTerms := make(map[string][][]byte)
 	docValueReader, err := seg.DocumentValueReader(fields)
 	if err != nil {
 		t.Fatalf("err building document value reader: %v", err)
 	}
 	err = docValueReader.VisitDocumentValues(0, func(field string, term []byte) {
-		fieldTerms[field] = append(fieldTerms[field], string(term))
+		fieldTerms[field] = append(fieldTerms[field], term)
 	})
 	if err != nil {
 		t.Error(err)
 	}
 
-	expectedFieldTerms := map[string][]string{
-		"name": {"wow"},
-		"desc": {"some", "thing"},
-		"tag":  {"cold"},
+	expectedFieldTerms := map[string][][]byte{
+		"name":   {[]byte("wow")},
+		"desc":   {[]byte("some"), []byte("thing")},
+		"tag":    {[]byte("cold")},
+		"number": {[]byte("\\"), []byte{0xff}},
 	}
 	if !reflect.DeepEqual(fieldTerms, expectedFieldTerms) {
 		t.Errorf("expected field terms: %#v, got: %#v", expectedFieldTerms, fieldTerms)

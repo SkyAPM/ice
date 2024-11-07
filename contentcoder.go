@@ -17,13 +17,18 @@ package ice
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 
 	"github.com/blugelabs/ice/compress"
 )
 
-var termSeparator byte = 0xff
-var termSeparatorSplitSlice = []byte{termSeparator}
+const minTermLenWithEscape = 2
+
+var (
+	termSeparator byte = 0xff
+	termEscape    byte = '\\'
+)
 
 type chunkedContentCoder struct {
 	final     []byte
@@ -237,4 +242,50 @@ func readDocValueBoundary(chunk int, metaHeaders []metaData) (start, end uint64)
 		start = metaHeaders[chunk-1].DocDvOffset
 	}
 	return start, metaHeaders[chunk].DocDvOffset
+}
+
+func encodeTerm(dest, src []byte) []byte {
+	if src == nil {
+		dest = append(dest, termSeparator)
+		return dest
+	}
+	if bytes.IndexByte(src, termSeparator) < 0 && bytes.IndexByte(src, termEscape) < 0 {
+		dest = append(dest, src...)
+		dest = append(dest, termSeparator)
+		return dest
+	}
+	for _, b := range src {
+		if b == termSeparator || b == termEscape {
+			dest = append(dest, termEscape)
+		}
+		dest = append(dest, b)
+	}
+	dest = append(dest, termSeparator)
+	return dest
+}
+
+// nolint: gocritic, nolintlint
+func decodeTerm(dest, src []byte) ([]byte, []byte, error) {
+	if len(src) == 0 {
+		return nil, nil, errors.New("empty term values")
+	}
+	if src[0] == termSeparator {
+		return dest, src[1:], nil
+	}
+	for len(src) > 0 {
+		switch {
+		case src[0] == termEscape:
+			if len(src) < minTermLenWithEscape {
+				return nil, nil, errors.New("invalid termEscape character")
+			}
+			src = src[1:]
+			dest = append(dest, src[0])
+		case src[0] == termSeparator:
+			return dest, src[1:], nil
+		default:
+			dest = append(dest, src[0])
+		}
+		src = src[1:]
+	}
+	return nil, nil, errors.New("invalid term values")
 }
