@@ -88,7 +88,7 @@ func (s *Segment) Version() uint32 {
 	return s.footer.version
 }
 
-func (s *Segment) Timestamp() (int64, int64) {
+func (s *Segment) Timestamp() (startTime, endTime int64) {
 	if s.footer != nil {
 		return int64(s.footer.docTimeMin), int64(s.footer.docTimeMax)
 	}

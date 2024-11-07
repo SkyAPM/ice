@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"unsafe"
 
 	"github.com/blugelabs/ice/compress"
 )
@@ -27,6 +28,8 @@ import (
 // (stored field index is always non-empty and earlier in the
 // file)
 const termNotEncoded = 0
+
+var intSize = int(unsafe.Sizeof(uint64(0)))
 
 type chunkedIntCoder struct {
 	final     []byte
@@ -47,7 +50,7 @@ func newChunkedIntCoder(chunkSize, maxDocNum uint64) *chunkedIntCoder {
 	rv := &chunkedIntCoder{
 		chunkSize: chunkSize,
 		chunkLens: make([]uint64, total),
-		final:     make([]byte, 0, 64),
+		final:     make([]byte, 0, intSize),
 	}
 
 	return rv

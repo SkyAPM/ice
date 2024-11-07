@@ -868,20 +868,19 @@ func (s *interim) writeDictsTermField(docTermMap [][]byte, dict map[string]uint6
 	return nil
 }
 
-func (s *interim) calcTimestamp() (int64, int64) {
-	min := int64(math.MaxInt64)
-	max := int64(0)
+func (s *interim) calcTimestamp() (minVal, maxVal int64) {
+	minVal = int64(math.MaxInt64)
 	for _, v := range s.results {
 		t := v.Timestamp()
-		if t < min {
-			min = t
+		if t < minVal {
+			minVal = t
 		}
-		if t > max {
-			max = t
+		if t > maxVal {
+			maxVal = t
 		}
 	}
-	if min == math.MaxInt64 {
-		min = 0
+	if minVal == math.MaxInt64 {
+		minVal = 0
 	}
-	return min, max
+	return minVal, maxVal
 }

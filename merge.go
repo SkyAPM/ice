@@ -535,6 +535,7 @@ func writeDvLocs(w *countHashWriter, bufMaxVarintLen64 []byte, fieldDvLocsStart,
 	return fieldDvLocsOffset, nil
 }
 
+// nolint: gocritic, nolintlint
 func setupActiveForField(segments []*Segment, dropsIn []*roaring.Bitmap, newDocNumsIn [][]uint64, closeCh chan struct{},
 	fieldName string) (newDocNums [][]uint64, drops []*roaring.Bitmap, dicts []*Dictionary, itrs []vellum.Iterator,
 	segmentsInFocus []*Segment, err error) {

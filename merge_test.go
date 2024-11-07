@@ -135,6 +135,8 @@ func testMergeWithEmptySegments(t *testing.T, before bool, numEmptySegments int)
 		segsToMerge = append(segsToMerge, seg)
 	}
 
+	var closeFuncs []closeFunc
+
 	for i := 0; i < numEmptySegments; i++ {
 		fname := fmt.Sprintf("segment-empty-%d.ice", i)
 		segPath := filepath.Join(path, fname)
@@ -146,15 +148,17 @@ func testMergeWithEmptySegments(t *testing.T, before bool, numEmptySegments int)
 		if err != nil {
 			t.Fatalf("error opening segment: %v", err)
 		}
-		defer func(emptyClose closeFunc) {
-			cerr := emptyClose()
-			if cerr != nil {
-				t.Fatalf("error closing segment: %v", err)
-			}
-		}(emptyClose)
-
+		closeFuncs = append(closeFuncs, emptyClose)
 		segsToMerge = append(segsToMerge, emptyFileSegment)
 	}
+	defer func() {
+		for _, emptyClose := range closeFuncs {
+			cerr := emptyClose()
+			if cerr != nil {
+				t.Fatalf("error closing segment: %v", cerr)
+			}
+		}
+	}()
 
 	if !before {
 		segsToMerge = append(segsToMerge, seg)
@@ -207,6 +211,7 @@ func testMergeWithSelf(t *testing.T, segCur *Segment, expectedCount uint64) {
 
 	// trying merging the segment with itself for a few rounds
 	var diffs []string
+	var closeFuncs []closeFunc
 
 	for i := 0; i < 10; i++ {
 		fname := fmt.Sprintf("segment-self-%d.ice", i)
@@ -225,12 +230,7 @@ func testMergeWithSelf(t *testing.T, segCur *Segment, expectedCount uint64) {
 		if err != nil {
 			t.Fatalf("error opening merged segment: %v", err)
 		}
-		defer func(close closeFunc) {
-			cerr := close()
-			if cerr != nil {
-				t.Fatalf("error closing segment: %v", err)
-			}
-		}(closeNew)
+		closeFuncs = append(closeFuncs, closeNew)
 
 		if segNew.Count() != expectedCount {
 			t.Fatalf("wrong count")
@@ -246,6 +246,14 @@ func testMergeWithSelf(t *testing.T, segCur *Segment, expectedCount uint64) {
 
 		segCur = segNew
 	}
+	defer func() {
+		for _, closeF := range closeFuncs {
+			cerr := closeF()
+			if cerr != nil {
+				t.Fatalf("error closing segment: %v", cerr)
+			}
+		}
+	}()
 
 	if len(diffs) > 0 {
 		t.Errorf("mismatches after repeated self-merging: %v", strings.Join(diffs, "\n"))
@@ -602,6 +610,7 @@ func testMergeWithUpdates(t *testing.T, segmentDocIds [][]string, docsToDrop []*
 	defer cleanup()
 
 	var segsToMerge []segment.Segment
+	var closeFuncs []closeFunc
 
 	// convert segmentDocIds to segsToMerge
 	for i, docIds := range segmentDocIds {
@@ -618,15 +627,18 @@ func testMergeWithUpdates(t *testing.T, segmentDocIds [][]string, docsToDrop []*
 		if err != nil {
 			t.Fatalf("error opening segment: %v", err)
 		}
-		defer func(closeF closeFunc) {
-			cerr := closeF()
-			if cerr != nil {
-				t.Fatalf("error closing segment: %v", err)
-			}
-		}(closeF)
-
+		closeFuncs = append(closeFuncs, closeF)
 		segsToMerge = append(segsToMerge, seg)
 	}
+
+	defer func() {
+		for _, closeF := range closeFuncs {
+			cerr := closeF()
+			if cerr != nil {
+				t.Fatalf("error closing segment: %v", cerr)
+			}
+		}
+	}()
 
 	testMergeAndDropSegments(t, segsToMerge, docsToDrop, expectedNumDocs)
 }

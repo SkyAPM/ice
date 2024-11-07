@@ -17,7 +17,6 @@ package ice
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"testing"
@@ -31,7 +30,7 @@ import (
 // ice no longer knows about files itself
 
 func setupTestDir(t *testing.T) (path string, cleanup func()) {
-	path, err := ioutil.TempDir("", "ice-test")
+	path, err := os.MkdirTemp("", "ice-test")
 	if err != nil {
 		t.Fatalf("error creating tmp dir: %v", err)
 	}
