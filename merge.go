@@ -129,30 +129,26 @@ func mergeToWriter(segments []*Segment, drops []*roaring.Bitmap,
 	var dictLocs []uint64
 	var docTimeMin = uint64(math.MaxInt64)
 	var docTimeMax uint64
-	if numDocs > 0 {
-		storedIndexOffset, newDocNums, err = mergeStoredAndRemap(segments, drops,
-			fieldsMap, fieldsInv, fieldsSame, numDocs, cr, closeCh)
-		if err != nil {
-			return nil, nil, err
-		}
+	storedIndexOffset, newDocNums, err = mergeStoredAndRemap(segments, drops,
+		fieldsMap, fieldsInv, fieldsSame, numDocs, cr, closeCh)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		dictLocs, fieldDocs, fieldFreqs, docValueOffset, err = persistMergedRest(segments, drops,
-			fieldsInv, fieldsMap,
-			newDocNums, numDocs, chunkMode, cr, closeCh)
-		if err != nil {
-			return nil, nil, err
-		}
+	dictLocs, fieldDocs, fieldFreqs, docValueOffset, err = persistMergedRest(segments, drops,
+		fieldsInv, fieldsMap,
+		newDocNums, numDocs, chunkMode, cr, closeCh)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		for _, seg := range segments {
-			if seg.DocTimeMin() > 0 && seg.DocTimeMin() < docTimeMin {
-				docTimeMin = seg.DocTimeMin()
-			}
-			if seg.DocTimeMax() > docTimeMax {
-				docTimeMax = seg.DocTimeMax()
-			}
+	for _, seg := range segments {
+		if seg.DocTimeMin() > 0 && seg.DocTimeMin() < docTimeMin {
+			docTimeMin = seg.DocTimeMin()
 		}
-	} else {
-		dictLocs = make([]uint64, len(fieldsInv))
+		if seg.DocTimeMax() > docTimeMax {
+			docTimeMax = seg.DocTimeMax()
+		}
 	}
 
 	if docTimeMin == math.MaxInt64 {
@@ -212,8 +208,11 @@ func persistMergedRest(segments []*Segment, dropsIn []*roaring.Bitmap,
 	// these int coders are initialized with chunk size 1024
 	// however this will be reset to the correct chunk size
 	// while processing each individual field-term section
-	tfEncoder := newChunkedIntCoder(uint64(legacyChunkMode), newSegDocCount-1)
-	locEncoder := newChunkedIntCoder(uint64(legacyChunkMode), newSegDocCount-1)
+	if newSegDocCount == 0 {
+		newSegDocCount = 1
+	}
+	tfEncoder := newChunkedIntCoder(uint64(legacyChunkMode), newSegDocCount)
+	locEncoder := newChunkedIntCoder(uint64(legacyChunkMode), newSegDocCount)
 
 	var vellumBuf bytes.Buffer
 	newVellum, err := vellum.New(&vellumBuf, nil)
@@ -468,8 +467,12 @@ func prepareNewTerm(newSegDocCount uint64, chunkMode uint32, tfEncoder, locEncod
 		return err
 	}
 	// update encoders chunk
-	tfEncoder.SetChunkSize(chunkSize, newSegDocCount-1)
-	locEncoder.SetChunkSize(chunkSize, newSegDocCount-1)
+	var maxDocNum uint64 = 0
+	if newSegDocCount > 0 {
+		maxDocNum = newSegDocCount - 1
+	}
+	tfEncoder.SetChunkSize(chunkSize, maxDocNum)
+	locEncoder.SetChunkSize(chunkSize, maxDocNum)
 	return nil
 }
 
