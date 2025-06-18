@@ -46,10 +46,7 @@ type chunkedIntCoder struct {
 // chunks based on the provided chunkSize and supports up to the specified
 // maxDocNum
 func newChunkedIntCoder(chunkSize, maxDocNum uint64) *chunkedIntCoder {
-	var total uint64 = 1
-	if maxDocNum > 0 {
-		total = maxDocNum/chunkSize + 1
-	}
+	total := maxDocNum/chunkSize + 1
 	rv := &chunkedIntCoder{
 		chunkSize: chunkSize,
 		chunkLens: make([]uint64, total),
@@ -73,10 +70,7 @@ func (c *chunkedIntCoder) Reset() {
 // SetChunkSize changes the chunk size.  It is only valid to do so
 // with a new chunkedIntCoder, or immediately after calling Reset()
 func (c *chunkedIntCoder) SetChunkSize(chunkSize, maxDocNum uint64) {
-	total := 1
-	if maxDocNum != 0 {
-		total = int(maxDocNum/chunkSize + 1)
-	}
+	total := int(maxDocNum/chunkSize + 1)
 	c.chunkSize = chunkSize
 	if cap(c.chunkLens) < total {
 		c.chunkLens = make([]uint64, total)
