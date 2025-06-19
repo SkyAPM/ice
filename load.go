@@ -138,6 +138,9 @@ func (s *Segment) loadFields() error {
 
 // loadStoredFieldChunk load storedField chunk offsets
 func (s *Segment) loadStoredFieldChunk() error {
+	if s.footer.storedIndexOffset == 0 {
+		return nil
+	}
 	// read chunk num
 	chunkOffsetPos := int(s.footer.storedIndexOffset - uint64(sizeOfUint32))
 	chunkData, err := s.data.Read(chunkOffsetPos, chunkOffsetPos+sizeOfUint32)

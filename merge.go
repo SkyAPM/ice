@@ -153,6 +153,7 @@ func mergeToWriter(segments []*Segment, drops []*roaring.Bitmap,
 		}
 	} else {
 		dictLocs = make([]uint64, len(fieldsInv))
+		newDocNums = make([][]uint64, len(segments))
 	}
 
 	if docTimeMin == math.MaxInt64 {
