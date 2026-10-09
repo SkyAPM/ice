@@ -1,3 +1,8 @@
+# The features provided by this repository has been implemented in BanyanDB natively NOW.
+
+STATUS: Archived
+------
+
 # ice
 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/blugelabs/ice)](https://pkg.go.dev/github.com/blugelabs/ice)
